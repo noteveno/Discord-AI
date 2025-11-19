@@ -42,6 +42,14 @@ Kamao AI/
 
 ### 1. Install Dependencies
 
+Run the automated installer script:
+
+```bash
+python install.py
+```
+
+Or install manually:
+
 ```bash
 pip install -r requirements.txt
 ```
