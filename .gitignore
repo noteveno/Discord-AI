@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+venv/
+env/
+ENV/
+
+# Databases
+data/user_dbs/*.db
+*.db
+
+# Logs
+logs/*.log
+bot.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Old files in ROOT only (cleanup) - NOT src/
+/database.py
+/providers.py
+/utils.py
+/config.json
+/models.json
+/instruction.json
+/Admin.json

@@ -1,0 +1,25 @@
+{
+  "bot": {
+    "prefix": "/",
+    "max_tokens": 1000000,
+    "reset_threshold": 9999999999,
+    "discord_message_limit": 200000,
+    "max_user_dbs": 100,
+    "message_retention": 100
+  },
+  "providers": {
+    "gemini": {
+      "api_key_env": "GEMINI_API_KEY",
+      "default_model": "gemini-2.5-flash"
+    },
+    "groq": {
+      "api_key_env": "GROQ_API",
+      "default_model": "llama-3.3-70b-versatile"
+    },
+    "openrouter": {
+      "api_key_env": "OPENROUTER_API_KEY",
+      "default_model": "deepseek/deepseek-r1:free",
+      "referrer": "watermelon.fps.ms:10720"
+    }
+  }
+}

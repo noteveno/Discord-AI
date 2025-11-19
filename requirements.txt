@@ -1,0 +1,10 @@
+discord.py
+google-genai
+groq
+aiohttp
+yt-dlp
+tiktoken
+Pillow
+python-dotenv
+requests
+youtube-transcript-api

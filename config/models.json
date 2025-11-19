@@ -1,0 +1,408 @@
+{
+  "gemini": {
+    "gemini-2.5-pro": {
+      "name": "Gemini 2.5 Pro",
+      "desc": "Ultimate reasoning & coding powerhouse",
+      "emoji": "🧠",
+      "stars": 5,
+      "tokens": 1048576,
+      "speed": "medium",
+      "coding": "excellent",
+      "reasoning": "excellent"
+    },
+    "gemini-2.5-flash": {
+      "name": "Gemini 2.5 Flash",
+      "desc": "Fast & powerful daily driver",
+      "emoji": "⚡",
+      "stars": 4,
+      "tokens": 1048576,
+      "speed": "fast",
+      "coding": "very good",
+      "reasoning": "very good"
+    },
+    "gemini-2.5-flash-lite": {
+      "name": "Gemini 2.5 Flash Lite",
+      "desc": "Lightweight & cost-effective",
+      "emoji": "🪶",
+      "stars": 3,
+      "tokens": 1048576,
+      "speed": "very fast",
+      "coding": "good",
+      "reasoning": "good"
+    },
+    "gemini-2.0-flash": {
+      "name": "Gemini 2.0 Flash",
+      "desc": "Latest generation flash model",
+      "emoji": "⚡",
+      "stars": 5,
+      "tokens": 1048576,
+      "speed": "very fast",
+      "coding": "excellent",
+      "reasoning": "excellent"
+    },
+    "gemini-2.0-flash-lite": {
+      "name": "Gemini 2.0 Flash-Lite",
+      "desc": "Lightweight & cost-effective 2.0",
+      "emoji": "🪶",
+      "stars": 4,
+      "tokens": 1048576,
+      "speed": "ultra fast",
+      "coding": "very good",
+      "reasoning": "good"
+    },
+    "gemini-1.5-pro": {
+      "name": "Gemini 1.5 Pro",
+      "desc": "Reliable powerhouse with 2M context",
+      "emoji": "💎",
+      "stars": 5,
+      "tokens": 2097152,
+      "speed": "medium",
+      "coding": "excellent",
+      "reasoning": "excellent"
+    },
+    "gemini-1.5-flash": {
+      "name": "Gemini 1.5 Flash",
+      "desc": "Fast and efficient",
+      "emoji": "⚡",
+      "stars": 4,
+      "tokens": 1048576,
+      "speed": "fast",
+      "coding": "very good",
+      "reasoning": "good"
+    }
+  },
+  "groq": {
+    "llama-3.3-70b-versatile": {
+      "name": "Llama 3.3 70B",
+      "desc": "Best Groq model - balanced performance",
+      "emoji": "🦙",
+      "stars": 4,
+      "tokens": 131000,
+      "speed": "ultra fast",
+      "coding": "very good",
+      "reasoning": "good"
+    },
+    "llama-3.1-8b-instant": {
+      "name": "Llama 3.1 8B",
+      "desc": "Fastest inference for simple tasks",
+      "emoji": "⚡",
+      "stars": 3,
+      "tokens": 131000,
+      "speed": "instant",
+      "coding": "basic",
+      "reasoning": "basic"
+    },
+    "moonshotai/kimi-k2-instruct-0905": {
+      "name": "Kimi K2",
+      "desc": "Moonshot AI assistant",
+      "emoji": "🌙",
+      "stars": 4,
+      "tokens": 131000,
+      "speed": "fast",
+      "coding": "good",
+      "reasoning": "good"
+    },
+    "qwen/qwen3-32b": {
+      "name": "Qwen3 32B",
+      "desc": "Alibaba's latest Qwen model",
+      "emoji": "🐉",
+      "stars": 4,
+      "tokens": 131000,
+      "speed": "fast",
+      "coding": "very good",
+      "reasoning": "good"
+    },
+    "groq/compound": {
+      "name": "Groq Compound",
+      "desc": "Groq's proprietary compound model",
+      "emoji": "⚗️",
+      "stars": 4,
+      "tokens": 131000,
+      "speed": "fast",
+      "coding": "good",
+      "reasoning": "good"
+    },
+    "groq/compound-mini": {
+      "name": "Groq Compound Mini",
+      "desc": "Lightweight compound model",
+      "emoji": "⚗️",
+      "stars": 3,
+      "tokens": 131000,
+      "speed": "fast",
+      "coding": "basic",
+      "reasoning": "good"
+    },
+    "openai/gpt-oss-120b": {
+      "name": "GPT-OSS 120B",
+      "desc": "Large OSS variant",
+      "emoji": "🤖",
+      "stars": 4,
+      "tokens": 32000,
+      "speed": "slow",
+      "coding": "good",
+      "reasoning": "good"
+    },
+    "openai/gpt-oss-20b": {
+      "name": "GPT-OSS 20B",
+      "desc": "OpenAI OSS variant",
+      "emoji": "🤖",
+      "stars": 3,
+      "tokens": 32000,
+      "speed": "medium",
+      "coding": "good",
+      "reasoning": "good"
+    },
+    "openai/gpt-oss-safeguard-20b": {
+      "name": "GPT-OSS Safeguard 20B",
+      "desc": "Safeguarded OSS model",
+      "emoji": "🛡️",
+      "stars": 3,
+      "tokens": 32000,
+      "speed": "medium",
+      "coding": "basic",
+      "reasoning": "basic"
+    }
+  },
+  "openrouter": {
+    "deepseek/deepseek-r1-distill-llama-70b:free": {
+      "name": "DeepSeek R1 Distill Llama",
+      "desc": "Reasoning in Llama architecture",
+      "emoji": "🥃",
+      "stars": 4,
+      "tokens": 131000,
+      "speed": "fast",
+      "coding": "good",
+      "reasoning": "excellent"
+    },
+    "nousresearch/hermes-3-llama-3.1-405b:free": {
+      "name": "Hermes 3 405B",
+      "desc": "Ultimate free model - massive scale",
+      "emoji": "⭐",
+      "stars": 5,
+      "tokens": 32000,
+      "speed": "slow",
+      "coding": "excellent",
+      "reasoning": "excellent"
+    },
+    "meta-llama/llama-3.3-70b-instruct:free": {
+      "name": "Llama 3.3 70B",
+      "desc": "Meta's flagship - reliable & fast",
+      "emoji": "🦙",
+      "stars": 4,
+      "tokens": 131000,
+      "speed": "fast",
+      "coding": "good",
+      "reasoning": "good"
+    },
+    "qwen/qwen3-14b:free": {
+      "name": "Qwen3 14B",
+      "desc": "Balanced performance model",
+      "emoji": "⚖️",
+      "stars": 4,
+      "tokens": 40000,
+      "speed": "fast",
+      "coding": "good",
+      "reasoning": "good"
+    },
+    "qwen/qwen3-30b-a3b:free": {
+      "name": "Qwen3 30B A3B",
+      "desc": "Mixture-of-experts architecture",
+      "emoji": "🔬",
+      "stars": 4,
+      "tokens": 40000,
+      "speed": "fast",
+      "coding": "very good",
+      "reasoning": "good"
+    },
+    "qwen/qwen3-235b-a22b:free": {
+      "name": "Qwen3 235B A22B",
+      "desc": "Massive MoE powerhouse",
+      "emoji": "🚀",
+      "stars": 5,
+      "tokens": 40000,
+      "speed": "medium",
+      "coding": "excellent",
+      "reasoning": "excellent"
+    },
+    "qwen/qwen2.5-vl-32b-instruct:free": {
+      "name": "Qwen2.5 VL 32B",
+      "desc": "Vision-language model (16k ctx)",
+      "emoji": "👁️",
+      "stars": 4,
+      "tokens": 16000,
+      "speed": "fast",
+      "coding": "good",
+      "reasoning": "good"
+    },
+    "microsoft/mai-ds-r1:free": {
+      "name": "Microsoft MAI DS-R1",
+      "desc": "Microsoft research model",
+      "emoji": "🪟",
+      "stars": 4,
+      "tokens": 131000,
+      "speed": "medium",
+      "coding": "good",
+      "reasoning": "good"
+    },
+    "moonshotai/kimi-k2:free": {
+      "name": "Kimi K2",
+      "desc": "Moonshot AI assistant (32k ctx)",
+      "emoji": "🌙",
+      "stars": 4,
+      "tokens": 32000,
+      "speed": "fast",
+      "coding": "good",
+      "reasoning": "good"
+    },
+    "mistralai/mistral-small-3.1-24b-instruct:free": {
+      "name": "Mistral Small 3.1",
+      "desc": "Efficient Mistral model (96k ctx)",
+      "emoji": "🌪️",
+      "stars": 4,
+      "tokens": 96000,
+      "speed": "fast",
+      "coding": "very good",
+      "reasoning": "good"
+    },
+    "mistralai/mistral-small-3.2-24b-instruct:free": {
+      "name": "Mistral Small 3.2",
+      "desc": "Latest Mistral model",
+      "emoji": "🌪️",
+      "stars": 4,
+      "tokens": 32000,
+      "speed": "fast",
+      "coding": "very good",
+      "reasoning": "good"
+    },
+    "mistralai/mistral-7b-instruct:free": {
+      "name": "Mistral 7B",
+      "desc": "Original Mistral model (32k ctx)",
+      "emoji": "🌪️",
+      "stars": 3,
+      "tokens": 32000,
+      "speed": "fast",
+      "coding": "basic",
+      "reasoning": "basic"
+    },
+    "cognitivecomputations/dolphin-mistral-24b-venice-edition:free": {
+      "name": "Dolphin Mistral Venice",
+      "desc": "Uncensored Mistral variant (32k ctx)",
+      "emoji": "🐬",
+      "stars": 4,
+      "tokens": 32000,
+      "speed": "fast",
+      "coding": "good",
+      "reasoning": "good"
+    },
+    "tngtech/deepseek-r1t2-chimera:free": {
+      "name": "DeepSeek R1T2 Chimera",
+      "desc": "Hybrid reasoning model",
+      "emoji": "🧬",
+      "stars": 4,
+      "tokens": 32000,
+      "speed": "fast",
+      "coding": "good",
+      "reasoning": "excellent"
+    },
+    "tngtech/deepseek-r1t-chimera:free": {
+      "name": "DeepSeek R1T Chimera",
+      "desc": "Tiered reasoning chimera",
+      "emoji": "🧬",
+      "stars": 4,
+      "tokens": 32000,
+      "speed": "fast",
+      "coding": "good",
+      "reasoning": "excellent"
+    },
+    "meituan/longcat-flash-chat:free": {
+      "name": "LongCat Flash Chat",
+      "desc": "Meituan chat model",
+      "emoji": "😺",
+      "stars": 3,
+      "tokens": 32000,
+      "speed": "fast",
+      "coding": "basic",
+      "reasoning": "good"
+    },
+    "arliai/qwq-32b-arliai-rpr-v1:free": {
+      "name": "QWQ 32B ArliAI",
+      "desc": "Quality-weighted reasoning (32k ctx)",
+      "emoji": "⚖️",
+      "stars": 4,
+      "tokens": 32000,
+      "speed": "fast",
+      "coding": "good",
+      "reasoning": "excellent"
+    },
+    "google/gemma-3-27b-it:free": {
+      "name": "Gemma 3 27B",
+      "desc": "Google large model",
+      "emoji": "💎",
+      "stars": 4,
+      "tokens": 32000,
+      "speed": "medium",
+      "coding": "very good",
+      "reasoning": "good"
+    },
+    "openai/gpt-oss-20b:free": {
+      "name": "GPT-OSS 20B",
+      "desc": "OpenAI OSS variant",
+      "emoji": "🤖",
+      "stars": 3,
+      "tokens": 32000,
+      "speed": "medium",
+      "coding": "good",
+      "reasoning": "good"
+    },
+    "deepseek/deepseek-chat-v3.1:free": {
+      "name": "DeepSeek Chat V3.1",
+      "desc": "DeepSeek chat model",
+      "emoji": "💬",
+      "stars": 4,
+      "tokens": 32000,
+      "speed": "fast",
+      "coding": "good",
+      "reasoning": "good"
+    },
+    "nvidia/nemotron-nano-12b-v2-vl:free": {
+      "name": "Nemotron Nano 12B VL",
+      "desc": "NVIDIA multimodal model (32k ctx)",
+      "emoji": "👁️",
+      "stars": 4,
+      "tokens": 32000,
+      "speed": "fast",
+      "coding": "good",
+      "reasoning": "good"
+    },
+    "kwaipilot/kat-coder-pro:free": {
+      "name": "KaT Coder Pro",
+      "desc": "Specialized coding assistant",
+      "emoji": "💻",
+      "stars": 4,
+      "tokens": 32000,
+      "speed": "fast",
+      "coding": "excellent",
+      "reasoning": "good"
+    },
+    "nvidia/nemotron-nano-9b-v2:free": {
+      "name": "Nemotron Nano 9B",
+      "desc": "NVIDIA efficient model (32k ctx)",
+      "emoji": "⚡",
+      "stars": 3,
+      "tokens": 32000,
+      "speed": "very fast",
+      "coding": "good",
+      "reasoning": "good"
+    },
+    "agentica-org/deepcoder-14b-preview:free": {
+      "name": "DeepCoder 14B Preview (broken)",
+      "desc": "Code-specialized model",
+      "emoji": "🧑‍💻",
+      "stars": 4,
+      "tokens": 32000,
+      "speed": "fast",
+      "coding": "excellent",
+      "reasoning": "good"
+    }
+  }
+}
