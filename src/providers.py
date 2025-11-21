@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Any, Dict
+from typing import List, Any, Dict, Optional
 from groq import Groq
 import aiohttp
 
@@ -10,10 +10,11 @@ logger = logging.getLogger('Providers')
 class AIProvider(ABC):
     """Base class for AI providers"""
     
-    def __init__(self, model_name: str, system_instruction: str, config: Dict[str, Any]):
+    def __init__(self, model_name: str, system_instruction: str, config: Dict[str, Any], http_session: Optional[aiohttp.ClientSession] = None):
         self.model_name = model_name
         self.system_instruction = system_instruction
         self.config = config
+        self.http_session = http_session
     
     @abstractmethod
     def initialize(self, history: List[Dict[str, Any]]) -> None:
@@ -26,8 +27,8 @@ class AIProvider(ABC):
 class GeminiProvider(AIProvider):
     """Google Gemini provider using new SDK"""
     
-    def __init__(self, model_name: str, system_instruction: str, config: Dict[str, Any]):
-        super().__init__(model_name, system_instruction, config)
+    def __init__(self, model_name: str, system_instruction: str, config: Dict[str, Any], http_session: Optional[aiohttp.ClientSession] = None):
+        super().__init__(model_name, system_instruction, config, http_session)
         self.client = None
         self._history = []
         self._last_model = None
@@ -77,7 +78,7 @@ class GeminiProvider(AIProvider):
         contents = self._history.copy()
         
         # Process input parts (text and images)
-        # Process input parts (text and images)
+
         current_parts = []
         
         if isinstance(parts, list):
@@ -95,10 +96,14 @@ class GeminiProvider(AIProvider):
                         part.save(img_byte_arr, format='JPEG')
                         img_bytes = img_byte_arr.getvalue()
                         
-                        current_parts.append(types.Part.from_bytes(
-                            data=img_bytes,
-                            mime_type='image/jpeg'
-                        ))
+                        # Only add if we have valid image data
+                        if img_bytes and len(img_bytes) > 0:
+                            current_parts.append(types.Part.from_bytes(
+                                data=img_bytes,
+                                mime_type='image/jpeg'
+                            ))
+                        else:
+                            logger.warning("Skipping empty image data")
                     except Exception as img_err:
                         logger.error(f"Image processing error: {img_err}")
         else:
@@ -116,11 +121,14 @@ class GeminiProvider(AIProvider):
         try:
             # Build tools config for Gemini 3 and newer models
             tools = []
-            if "gemini-3" in self.model_name or "gemini-2" in self.model_name:
+            # Only enable tools if explicitly supported/requested to avoid errors
+            if "gemini-2" in self.model_name or "gemini-1.5-pro" in self.model_name:
                 tools = [
                     {"google_search": {}},  # Enable Google Search/Grounding
-                    {"code_execution": {}}   # Enable code execution
                 ]
+                # Code execution can be risky or unsupported on some models, keeping it optional
+                if "code" in self.model_name or "gemini-2.0-flash-thinking" in self.model_name:
+                     tools.append({"code_execution": {}})
             
             config = {
                 "system_instruction": {"parts": [{"text": self.system_instruction}]},
@@ -157,17 +165,29 @@ class GeminiProvider(AIProvider):
                 
                 return response_text
             
-            raise ValueError("Empty response from Gemini")
+            # Handle empty response gracefully
+            logger.warning("Gemini returned empty response, using fallback")
+            return "I apologize, but I couldn't generate a response. Please try again or rephrase your message."
             
         except Exception as e:
+            if "503" in str(e) or "429" in str(e):
+                logger.warning(f"Gemini API error {e}, retrying...")
+                await asyncio.sleep(2)
+                try:
+                    return await self.generate_response(parts)
+                except Exception as retry_e:
+                    logger.error(f"Gemini retry failed: {retry_e}")
+                    raise retry_e
+            
             logger.error(f"Gemini error: {e}")
             raise
+
 
 class GroqProvider(AIProvider):
     """Groq provider"""
     
-    def __init__(self, model_name: str, system_instruction: str, config: Dict[str, Any]):
-        super().__init__(model_name, system_instruction, config)
+    def __init__(self, model_name: str, system_instruction: str, config: Dict[str, Any], http_session: Optional[aiohttp.ClientSession] = None):
+        super().__init__(model_name, system_instruction, config, http_session)
         self.client = None
         self.messages = []
     
@@ -230,8 +250,8 @@ class GroqProvider(AIProvider):
 class OpenRouterProvider(AIProvider):
     """OpenRouter provider"""
     
-    def __init__(self, model_name: str, system_instruction: str, config: Dict[str, Any]):
-        super().__init__(model_name, system_instruction, config)
+    def __init__(self, model_name: str, system_instruction: str, config: Dict[str, Any], http_session: Optional[aiohttp.ClientSession] = None):
+        super().__init__(model_name, system_instruction, config, http_session)
         self.messages = []
     
     def initialize(self, history: List[Dict[str, Any]]) -> None:
@@ -276,7 +296,14 @@ class OpenRouterProvider(AIProvider):
         }
         
         try:
-            async with aiohttp.ClientSession() as session:
+            if self.http_session:
+                session = self.http_session
+                should_close = False
+            else:
+                session = aiohttp.ClientSession()
+                should_close = True
+
+            try:
                 async with session.post(
                     "https://openrouter.ai/api/v1/chat/completions",
                     headers=headers,
@@ -292,6 +319,9 @@ class OpenRouterProvider(AIProvider):
                     
                     self.messages.append({"role": "assistant", "content": response_text})
                     return response_text
+            finally:
+                if should_close:
+                    await session.close()
                     
         except Exception as e:
             logger.error(f"OpenRouter error: {e}")

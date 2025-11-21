@@ -8,3 +8,4 @@ Pillow
 python-dotenv
 requests
 youtube-transcript-api
+ddgs

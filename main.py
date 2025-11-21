@@ -9,6 +9,9 @@ import discord
 import os
 import json
 import logging
+import logging.handlers
+import asyncio
+import sys
 from pathlib import Path
 
 # Local imports
@@ -20,7 +23,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('logs/bot.log', encoding='utf-8'),
+        logging.handlers.RotatingFileHandler('logs/bot.log', maxBytes=5*1024*1024, backupCount=5, encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
@@ -52,7 +55,7 @@ setup_commands(bot)
 
 @bot.event
 async def on_ready():
-    """Bot ready event with command syncing (FIXED: missing sync)"""
+    """Bot ready event with command syncing"""
     logger.info(f'✅ {bot.user.name} (ID: {bot.user.id}) is now online!')
     logger.info(f'🌐 Connected to {len(bot.guilds)} guild(s)')
     
@@ -62,7 +65,7 @@ async def on_ready():
     else:
         logger.warning('⚠️ CHANNEL_ID not set in environment!')
     
-    # Sync slash commands (FIXED: was missing)
+    # Sync slash commands
     try:
         synced = await bot.tree.sync()
         logger.info(f'✅ Synced {len(synced)} slash command(s)')
@@ -96,6 +99,10 @@ async def on_command_error(ctx, error):
 
 # Start bot
 if __name__ == "__main__":
+    # Fix for Windows Event Loop RuntimeError
+    if os.name == 'nt':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
     token = os.getenv('DISCORD_TOKEN')
     if not token:
         logger.error("❌ DISCORD_TOKEN not set in environment!")
@@ -108,18 +115,6 @@ if __name__ == "__main__":
     
     logger.info("🚀 Starting Kamao AI Bot...")
     
-    import signal
-    import sys
-    
-    def signal_handler(sig, frame):
-        """Handle shutdown signals gracefully"""
-        logger.info("🛑 Shutdown signal received, cleaning up...")
-        sys.exit(0)
-    
-    # Register signal handlers for graceful shutdown
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-    
     try:
         bot.run(token, reconnect=True)
     except KeyboardInterrupt:
@@ -128,4 +123,3 @@ if __name__ == "__main__":
         logger.critical(f"❌ Failed to start bot: {e}", exc_info=True)
     finally:
         logger.info("✅ Bot shutdown complete")
-

@@ -6,12 +6,16 @@ import os
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
+import io
+from .utils import download_file
 
 from .ui_components import (
     ModelSelectorView, ConfirmView,
     create_status_embed, create_error_embed,
     Colors, Emojis
 )
+from .image_gen import ImageGenerator
+from .search import SearchEngine
 
 logger = logging.getLogger('Commands')
 
@@ -120,12 +124,7 @@ def setup_commands(bot):
             )
             return
         
-        if interaction.guild and not interaction.user.guild_permissions.administrator:
-            await interaction.response.send_message(
-                embed=create_error_embed("This command requires Administrator permission"),
-                ephemeral=True
-            )
-            return
+        # Admin check removed to allow users to reset their own memory
         
         wipe_text = "**COMPLETE WIPE** - All messages will be deleted!" if full_wipe else "Keep last 10 messages for context"
         
@@ -139,24 +138,33 @@ def setup_commands(bot):
         view = ConfirmView(timeout=30)
         
         async def confirm_callback(interaction_inner: discord.Interaction):
-            session = await bot.get_user_session(interaction_inner.user.id)
-            
-            if full_wipe:
-                session.chat_db.clear_all()
-                kept = 0
-            else:
-                session.chat_db.reset_context(10)
-                kept = 10
-            
-            session.ai_provider = None
-            
-            success_embed = create_status_embed(
-                "Reset Complete",
-                f"✅ {'All messages cleared!' if full_wipe else f'Kept last {kept} messages for context.'}",
-                Colors.SUCCESS,
-                Emojis.CHECK
-            )
-            await interaction_inner.response.edit_message(embed=success_embed, view=None)
+            try:
+                session = await bot.get_user_session(interaction_inner.user.id)
+                
+                if full_wipe:
+                    session.chat_db.clear_all()
+                    kept = 0
+                else:
+                    session.chat_db.reset_context(10)
+                    kept = 10
+                
+                # Force re-initialization
+                session.ai_provider = None
+                
+                success_embed = create_status_embed(
+                    "Reset Complete",
+                    f"✅ {'All messages cleared!' if full_wipe else f'Kept last {kept} messages for context.'}",
+                    Colors.SUCCESS,
+                    Emojis.CHECK
+                )
+                await interaction_inner.response.edit_message(embed=success_embed, view=None)
+                logger.info(f"User {interaction_inner.user.id} reset their memory")
+            except Exception as e:
+                logger.error(f"Reset error: {e}")
+                await interaction_inner.response.send_message(
+                    embed=create_error_embed(f"Failed to reset: {str(e)}"),
+                    ephemeral=True
+                )
         
         view.confirm.callback = confirm_callback
         
@@ -409,4 +417,125 @@ def setup_commands(bot):
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
     
+    @bot.tree.command(name="imagine", description="🎨 Generate an image from text")
+    @app_commands.describe(
+        prompt="The description of the image",
+        style="The artistic style",
+        seed="Optional seed for reproducibility"
+    )
+    @app_commands.choices(style=[
+        app_commands.Choice(name=s, value=s) for s in ImageGenerator.STYLES.keys()
+    ])
+    async def imagine_cmd(interaction: discord.Interaction, prompt: str, style: str = "Realistic", seed: int = None):
+        """Generate image"""
+        channel_id = os.getenv('CHANNEL_ID')
+        if not channel_id or str(interaction.channel_id) != channel_id:
+            await interaction.response.send_message(
+                embed=create_error_embed("This command only works in the AI channel"),
+                ephemeral=True
+            )
+            return
+            
+        await interaction.response.defer()
+        
+        # Validate prompt
+        if not prompt or not prompt.strip():
+            await interaction.followup.send(
+                embed=create_error_embed("Please provide a description for the image"),
+                ephemeral=True
+            )
+            return
+        
+        try:
+            image_url = await ImageGenerator.generate(prompt, style, seed)
+            
+            embed = discord.Embed(
+                title=f"🎨 {prompt[:50]}...",
+                description=f"**Style:** {style} | **Seed:** {seed if seed else 'Random'}",
+                color=Colors.PRIMARY
+            )
+            embed.set_footer(text="Generated via Pollinations.ai • Flux Model")
+            
+            # Try to download and upload image
+            try:
+                # Use bot's shared session if available
+                session = getattr(interaction.client, 'http_session', None)
+                image_data = await download_file(image_url, session)
+                
+                if image_data:
+                    file = discord.File(io.BytesIO(image_data), filename="image.jpg")
+                    embed.set_image(url="attachment://image.jpg")
+                    await interaction.followup.send(embed=embed, file=file)
+                    logger.info(f"{interaction.user.name} generated image (uploaded): {prompt}")
+                    return
+            except Exception as dl_err:
+                logger.warning(f"Failed to upload image, falling back to URL: {dl_err}")
+
+            # Fallback to URL
+            embed.set_image(url=image_url)
+            await interaction.followup.send(embed=embed)
+            logger.info(f"{interaction.user.name} generated image (url): {prompt}")
+            
+        except Exception as e:
+            logger.error(f"Image generation error: {e}")
+            await interaction.followup.send(
+                embed=create_error_embed(f"Failed to generate image: {str(e)}"),
+                ephemeral=True
+            )
+
+    @bot.tree.command(name="search", description="🌐 Search the web for real-time information")
+    @app_commands.describe(query="What to search for")
+    async def search_cmd(interaction: discord.Interaction, query: str):
+        """Web search"""
+        channel_id = os.getenv('CHANNEL_ID')
+        if not channel_id or str(interaction.channel_id) != channel_id:
+            await interaction.response.send_message(
+                embed=create_error_embed("This command only works in the AI channel"),
+                ephemeral=True
+            )
+            return
+            
+        await interaction.response.defer()
+        
+        # Validate query
+        if not query or not query.strip():
+            await interaction.followup.send(
+                embed=create_error_embed("Please provide a search query"),
+                ephemeral=True
+            )
+            return
+        
+        try:
+            results = await SearchEngine.search(query)
+            
+            if not results:
+                await interaction.followup.send(
+                    embed=create_error_embed("No results found"),
+                    ephemeral=True
+                )
+                return
+            
+            embed = discord.Embed(
+                title=f"🌐 Search Results: {query}",
+                color=Colors.INFO
+            )
+            
+            for r in results:
+                embed.add_field(
+                    name=r['title'][:256],
+                    value=f"{r['snippet'][:200]}...\n[Link]({r['link']})",
+                    inline=False
+                )
+            
+            embed.set_footer(text="Powered by DuckDuckGo")
+            await interaction.followup.send(embed=embed)
+            logger.info(f"{interaction.user.name} searched for: {query}")
+            
+        except Exception as e:
+            logger.error(f"Search command error: {e}")
+            await interaction.followup.send(
+                embed=create_error_embed(f"Failed to search: {str(e)}"),
+                ephemeral=True
+            )
+
     logger.info("All commands registered")

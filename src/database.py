@@ -153,7 +153,7 @@ class ChatDatabase:
                     "tokens": row[4]
                 })
                 
-            logger.info(f"Loaded {len(messages)} messages from DB: { self.db_path}")
+            logger.info(f"Loaded {len(messages)} messages from DB: {self.db_path}")
             return list(reversed(messages))
     
     def get_token_count(self) -> int:

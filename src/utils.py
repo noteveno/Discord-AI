@@ -11,6 +11,9 @@ logger = logging.getLogger('Utils')
 
 def sanitize_discord_markdown(text: str) -> str:
     """Fix markdown issues, especially tables and code blocks"""
+    if not text:
+        return ""
+        
     lines = text.split('\n')
     in_code_block = False
     
@@ -41,6 +44,12 @@ def _convert_markdown_tables(text: str) -> str:
 
 def optimize_response_length(query: str, response: str) -> str:
     """Intelligently trim responses"""
+    if not response:
+        return ""
+        
+    if not query:
+        return response
+        
     query_lower = query.lower().strip()
     
     simple_patterns = [
@@ -116,24 +125,44 @@ def split_message_smart(text: str, limit: int = 1900) -> List[str]:
     
     return parts
 
-async def download_image(url: str) -> Optional[Image.Image]:
-    """Download image from URL"""
+async def download_image(url: str, session: Optional[aiohttp.ClientSession] = None) -> Optional[Image.Image]:
+    """Download image from URL using shared session if available"""
+    headers = {"User-Agent": "KamaoBot/1.0"}
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+        if session:
+            async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as resp:
                 if resp.status == 200:
                     return Image.open(io.BytesIO(await resp.read()))
+                else:
+                    logger.warning(f"Image download failed: {resp.status} for {url}")
+        else:
+            async with aiohttp.ClientSession() as new_session:
+                async with new_session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                    if resp.status == 200:
+                        return Image.open(io.BytesIO(await resp.read()))
+                    else:
+                        logger.warning(f"Image download failed: {resp.status} for {url}")
     except Exception as e:
         logger.error(f"Image download error: {e}")
     return None
 
-async def download_file(url: str) -> Optional[bytes]:
-    """Download file from URL"""
+async def download_file(url: str, session: Optional[aiohttp.ClientSession] = None) -> Optional[bytes]:
+    """Download file from URL using shared session if available"""
+    headers = {"User-Agent": "KamaoBot/1.0"}
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+        if session:
+            async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=20)) as resp:
                 if resp.status == 200:
                     return await resp.read()
+                else:
+                    logger.warning(f"File download failed: {resp.status} for {url}")
+        else:
+            async with aiohttp.ClientSession() as new_session:
+                async with new_session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=20)) as resp:
+                    if resp.status == 200:
+                        return await resp.read()
+                    else:
+                        logger.warning(f"File download failed: {resp.status} for {url}")
     except Exception as e:
         logger.error(f"File download error: {e}")
     return None
@@ -153,7 +182,7 @@ def extract_youtube_id(url: str) -> Optional[str]:
             return match.group(1)
     return None
 
-async def get_youtube_transcript(video_id: str) -> str:
+async def get_youtube_transcript(video_id: str, session: Optional[aiohttp.ClientSession] = None) -> str:
     """Get YouTube video transcript"""
     try:
         url = f"https://www.youtube.com/watch?v={video_id}"
@@ -188,7 +217,7 @@ async def get_youtube_transcript(video_id: str) -> str:
                     for sub in subs[lang]:
                         if sub.get('ext') == 'json3':
                             try:
-                                async with aiohttp.ClientSession() as session:
+                                if session:
                                     async with session.get(sub['url']) as resp:
                                         if resp.status == 200:
                                             data = await resp.json()
@@ -199,6 +228,18 @@ async def get_youtube_transcript(video_id: str) -> str:
                                                         texts.append(seg['utf8'])
                                             transcript = ' '.join(texts).replace('\n', ' ')
                                             break
+                                else:
+                                    async with aiohttp.ClientSession() as new_session:
+                                        async with new_session.get(sub['url']) as resp:
+                                            if resp.status == 200:
+                                                data = await resp.json()
+                                                texts = []
+                                                for event in data.get('events', []):
+                                                    for seg in event.get('segs', []):
+                                                        if 'utf8' in seg:
+                                                            texts.append(seg['utf8'])
+                                                transcript = ' '.join(texts).replace('\n', ' ')
+                                                break
                             except Exception as e:
                                 logger.warning(f"Subtitle error: {e}")
                     if transcript:
@@ -245,19 +286,9 @@ async def get_video_info(url: str) -> Optional[dict]:
         if "streamable.com" in url:
             # Streamable requires scraping or API, for now we'll just return the URL
             # The model can often access the public page directly if search is enabled
-            return {
-                'title': 'Streamable Video',
-                'description': f'Video hosted on Streamable: {url}',
-                'url': url,
-                'provider': 'streamable'
-            }
+            return {"url": url, "title": "Streamable Video"}
             
-        # For now, return basic info for others
-        return {
-            'title': 'Video',
-            'description': f'Video from {url[:50]}...',
-            'url': url
-        }
+        return {"url": url, "title": "Video File"}
     except Exception as e:
         logger.error(f"Video info error: {e}")
         return None

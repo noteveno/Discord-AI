@@ -1,9 +1,19 @@
 {
   "gemini": {
+    "gemini-3-pro-preview": {
+      "name": "Gemini 3 Pro Preview",
+      "desc": "Ultimate reasoning & coding powerhouse",
+      "emoji": "👑",
+      "stars": 5,
+      "tokens": 1048576,
+      "speed": "medium",
+      "coding": "excellent",
+      "reasoning": "excellent"
+    },
     "gemini-2.5-pro": {
       "name": "Gemini 2.5 Pro",
-      "desc": "Ultimate reasoning & coding powerhouse",
-      "emoji": "🧠",
+      "desc": "Mid-range reasoning & coding powerhouse",
+      "emoji": "👑",
       "stars": 5,
       "tokens": 1048576,
       "speed": "medium",
