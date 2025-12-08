@@ -386,10 +386,10 @@
     },
     "kwaipilot/kat-coder-pro:free": {
       "name": "KaT Coder Pro",
-      "desc": "Specialized coding assistant",
+      "desc": "Specialized coding assistant with 256K context",
       "emoji": "💻",
       "stars": 4,
-      "tokens": 32000,
+      "tokens": 256000,
       "speed": "fast",
       "coding": "excellent",
       "reasoning": "good"
@@ -413,6 +413,56 @@
       "speed": "fast",
       "coding": "excellent",
       "reasoning": "good"
+    },
+    "amazon/nova-2-lite-v1:free": {
+      "name": "Amazon Nova 2 Lite",
+      "desc": "Amazon's efficient AI model with 1M context",
+      "emoji": "📦",
+      "stars": 4,
+      "tokens": 1000000,
+      "speed": "fast",
+      "coding": "good",
+      "reasoning": "good"
+    },
+    "arcee-ai/trinity-mini:free": {
+      "name": "Arcee Trinity Mini",
+      "desc": "Compact efficient model from Arcee AI",
+      "emoji": "🔺",
+      "stars": 3,
+      "tokens": 131072,
+      "speed": "very fast",
+      "coding": "good",
+      "reasoning": "good"
+    },
+    "tngtech/tng-r1t-chimera:free": {
+      "name": "TNG R1T Chimera",
+      "desc": "TNG's hybrid reasoning model",
+      "emoji": "🧬",
+      "stars": 4,
+      "tokens": 163840,
+      "speed": "fast",
+      "coding": "good",
+      "reasoning": "excellent"
+    },
+    "allenai/olmo-3-32b-think:free": {
+      "name": "OLMo 3 32B Think",
+      "desc": "Allen AI's open reasoning model",
+      "emoji": "🎓",
+      "stars": 4,
+      "tokens": 65536,
+      "speed": "medium",
+      "coding": "good",
+      "reasoning": "excellent"
+    },
+    "alibaba/tongyi-deepresearch-30b-a3b:free": {
+      "name": "Tongyi DeepResearch 30B",
+      "desc": "Alibaba's research-focused model",
+      "emoji": "🔬",
+      "stars": 4,
+      "tokens": 131072,
+      "speed": "fast",
+      "coding": "good",
+      "reasoning": "very good"
     }
   }
 }

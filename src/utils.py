@@ -201,7 +201,7 @@ async def get_youtube_transcript(video_id: str, session: Optional[aiohttp.Client
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 return ydl.extract_info(url, download=False)
         
-        info = await asyncio.get_event_loop().run_in_executor(None, extract)
+        info = await asyncio.to_thread(extract)
         
         title = info.get('title', 'Unknown')
         description = info.get('description', '')[:500]

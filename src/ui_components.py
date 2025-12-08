@@ -1,259 +1,297 @@
-"""Modern Discord UI Components with rich embeds and gradients"""
+"""
+Kamao AI - Clean Modern Discord UI Components
+Minimalist design with strategic use of color and typography
+"""
 import discord
 from discord.ext import commands
-import json
 import logging
-from pathlib import Path
+from typing import Optional, List, Callable
+from datetime import datetime
 
 logger = logging.getLogger('UI')
 
-# Modern Color Scheme
-class Colors:
-    """Rich color palette for modern Discord UI"""
-    PRIMARY = 0x5865F2  # Discord Blurple
-    PRIMARY_DARK = 0x4752C4  # Darker blurple
-    SUCCESS = 0x00FF7F  # Spring green
-    WARNING = 0xFFA500  # Orange
-    ERROR = 0xFF4444  # Red
-    INFO = 0x00BFFF  # Cyan
-    PURPLE_GRADIENT = 0x7289DA  # Light purple
-    GOLD = 0xFFD700  # Gold
-    DARK = 0x2C2F33  # Dark gray
-    
-# Emoji sets for visual appeal
-class Emojis:
-    """Rich emoji collection"""
-    ROCKET = "🚀"
-    SPARKLES = "✨"
-    GEAR = "⚙️"
-    CHART = "📊"
-    CHECK = "✅"
-    CROSS = "❌"
-    WARNING = "⚠️"
-    INFO = "ℹ️"
-    BRAIN = "🧠"
-    LIGHTNING = "⚡"
-    STAR = "⭐"
-    FIRE = "🔥"
-    ROBOT = "🤖"
-    MAGIC = "🪄"
-    SHIELD = "🛡️"
-    CROWN = "👑"
-    GEM = "💎"
-    TRASH = "🗑️"
-    LOCK = "🔒"
-    HAMMER = "🔨"
-    ARROW_RIGHT = "➡️"
-    ARROW_LEFT = "⬅️"
 
-def create_status_embed(title: str, description: str, color: int, emoji: str = None) -> discord.Embed:
-    """Create a styled status embed with emoji"""
-    if emoji:
-        title = f"{emoji} {title}"
-    
+class Colors:
+    """Modern color palette - Discord native colors"""
+    PRIMARY = 0x5865F2      # Discord Blurple
+    SECONDARY = 0x4E5058    # Dark gray
+    SUCCESS = 0x3BA55C      # Green
+    WARNING = 0xFAA61A      # Amber
+    ERROR = 0xED4245        # Red
+    INFO = 0x5865F2         # Blurple
+    DARK = 0x2F3136         # Embed dark
+    ACCENT = 0xEB459E       # Fuchsia
+
+
+def create_embed(
+    title: str,
+    description: str = None,
+    color: int = Colors.PRIMARY,
+    footer: str = None
+) -> discord.Embed:
+    """Create a clean embed with minimal styling"""
     embed = discord.Embed(
         title=title,
         description=description,
-        color=color
+        color=color,
+        timestamp=datetime.utcnow()
     )
-    embed.set_footer(text="Kamao AI • Next-Gen Discord Bot")
+    if footer:
+        embed.set_footer(text=footer)
     return embed
 
-def create_error_embed(error_msg: str) -> discord.Embed:
-    """Create a styled error embed"""
+
+def create_error_embed(message: str, suggestion: str = None) -> discord.Embed:
+    """Create error embed with optional recovery suggestion"""
     embed = discord.Embed(
-        title=f"{Emojis.CROSS} Error Occurred",
-        description=f"```\n{error_msg[:500]}\n```",
+        title="Error",
+        description=f"```{message[:400]}```",
         color=Colors.ERROR
     )
-    embed.add_field(
-        name="💡 What to try:",
-        value="• Check your command syntax\n• Try a different model with `/model`\n• Contact admin if issue persists",
-        inline=False
-    )
-    embed.set_footer(text="Kamao AI • Error Handler")
+    if suggestion:
+        embed.add_field(name="Suggestion", value=suggestion, inline=False)
+    else:
+        embed.add_field(
+            name="Try",
+            value="Use `/model` to switch providers or `/reset` to clear memory",
+            inline=False
+        )
     return embed
 
-def create_loading_embed() -> discord.Embed:
-    """Create a loading/processing embed"""
-    embed = discord.Embed(
-        title=f"{Emojis.GEAR} Processing...",
-        description="*Your request is being processed*",
+
+def create_success_embed(title: str, description: str) -> discord.Embed:
+    """Create success embed"""
+    return discord.Embed(
+        title=title,
+        description=description,
+        color=Colors.SUCCESS
+    )
+
+
+def create_info_embed(title: str, description: str) -> discord.Embed:
+    """Create info embed"""
+    return discord.Embed(
+        title=title,
+        description=description,
         color=Colors.INFO
     )
-    return embed
+
 
 class ConfirmView(discord.ui.View):
-    """Confirmation dialog view"""
-    def __init__(self, timeout=30):
+    """Clean confirmation dialog"""
+    
+    def __init__(self, timeout: int = 30):
         super().__init__(timeout=timeout)
-        self.value = None
+        self.value: Optional[bool] = None
+        self.interaction: Optional[discord.Interaction] = None
 
-    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green, emoji=Emojis.CHECK)
-    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
+    async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.value = True
-        await interaction.response.defer()
+        self.interaction = interaction
         self.stop()
 
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red, emoji=Emojis.CROSS)
-    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
+    async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.value = False
-        await interaction.response.defer()
+        self.interaction = interaction
+        await interaction.response.edit_message(
+            embed=create_embed("Cancelled", "Operation cancelled.", Colors.SECONDARY),
+            view=None
+        )
         self.stop()
+
+    async def on_timeout(self):
+        self.value = False
+
 
 class ModelSelectorView(discord.ui.View):
-    """Modern model selection UI with pagination"""
+    """Clean model selection with two-step flow"""
+    
+    PROVIDERS = {
+        "gemini": {
+            "name": "Google Gemini",
+            "desc": "Multimodal AI with vision and grounding",
+            "color": Colors.PRIMARY
+        },
+        "groq": {
+            "name": "Groq",
+            "desc": "Ultra-fast inference engine",
+            "color": Colors.SUCCESS
+        },
+        "openrouter": {
+            "name": "OpenRouter",
+            "desc": "40+ free AI models",
+            "color": Colors.ACCENT
+        }
+    }
     
     def __init__(self, user_id: int, bot, models_config: dict):
-        super().__init__(timeout=120)
+        super().__init__(timeout=180)
         self.user_id = user_id
         self.bot = bot
         self.models_config = models_config
         self.current_page = 0
-        self.selected_provider = None
-        self.all_model_options = []
+        self.selected_provider: Optional[str] = None
+        self.model_options: List[discord.SelectOption] = []
         
-        # Provider selection dropdown
-        self.provider_select = discord.ui.Select(
-            placeholder=f"{Emojis.ROCKET} Step 1: Choose Your AI Provider",
-            min_values=1,
-            max_values=1,
-            options=[
-                discord.SelectOption(
-                    label="Google Gemini",
-                    value="gemini",
-                    description="Multimodal powerhouse with vision",
-                    emoji="♊"
-                ),
-                discord.SelectOption(
-                    label="Groq",
-                    value="groq",
-                    description="Lightning-fast inference",
-                    emoji="🚀"
-                ),
-                discord.SelectOption(
-                    label="OpenRouter",
-                    value="openrouter",
-                    description="Massive free model selection",
-                    emoji="🌟"
-                )
-            ],
+        # Build provider dropdown
+        self._add_provider_select()
+    
+    def _add_provider_select(self):
+        """Add provider selection dropdown"""
+        options = [
+            discord.SelectOption(
+                label=info["name"],
+                value=provider,
+                description=info["desc"]
+            )
+            for provider, info in self.PROVIDERS.items()
+            if provider in self.models_config
+        ]
+        
+        select = discord.ui.Select(
+            placeholder="Select AI Provider",
+            options=options,
             row=0
         )
-        self.provider_select.callback = self.provider_selected
-        self.add_item(self.provider_select)
-
-    async def provider_selected(self, interaction: discord.Interaction):
+        select.callback = self._on_provider_select
+        self.add_item(select)
+    
+    async def _on_provider_select(self, interaction: discord.Interaction):
         """Handle provider selection"""
         self.selected_provider = interaction.data['values'][0]
         self.current_page = 0
         
-        # Get current user session
+        # Build model options for this provider
         session = await self.bot.get_user_session(self.user_id)
+        self.model_options = []
         
-        # Build all model options
-        self.all_model_options = []
         for model_id, info in self.models_config[self.selected_provider].items():
-            # Create rich label with stats
-            label = f"{info['name']}"
-            desc = f"{info['desc'][:40]} • {info['speed']}"
-            
-            self.all_model_options.append(discord.SelectOption(
-                label=label[:100],
+            self.model_options.append(discord.SelectOption(
+                label=info['name'][:100],
                 value=model_id,
-                description=desc[:100],
-                emoji=info.get('emoji', Emojis.ROBOT),
-                default=model_id == session.current_model
+                description=f"{info['desc'][:50]} | {info['speed']}"[:100],
+                default=(model_id == session.current_model and 
+                        self.selected_provider == session.current_provider)
             ))
         
-        await self.update_model_view(interaction)
+        await self._update_view(interaction)
+    
+    async def _update_view(self, interaction: discord.Interaction):
+        """Refresh the view with model options"""
+        # Clear non-provider selects
+        self.clear_items()
+        self._add_provider_select()
         
-    async def update_model_view(self, interaction: discord.Interaction):
-        """Update the view with paginated models"""
-        # Clear previous model select and buttons
-        items_to_remove = [item for item in self.children if isinstance(item, (discord.ui.Select, discord.ui.Button)) and item != self.provider_select]
-        for item in items_to_remove:
-            self.remove_item(item)
-            
-        # Pagination logic
-        items_per_page = 23 # Leave room for Next/Prev
-        start_idx = self.current_page * items_per_page
-        end_idx = start_idx + items_per_page
-        current_options = self.all_model_options[start_idx:end_idx]
+        # Pagination
+        per_page = 24
+        start = self.current_page * per_page
+        end = start + per_page
+        page_options = self.model_options[start:end]
+        total_pages = (len(self.model_options) - 1) // per_page + 1
         
-        # Model selection dropdown
+        # Model dropdown
         model_select = discord.ui.Select(
-            placeholder=f"{Emojis.BRAIN} Step 2: Select Model (Page {self.current_page + 1})",
-            min_values=1,
-            max_values=1,
-            options=current_options,
+            placeholder=f"Select Model (Page {self.current_page + 1}/{total_pages})",
+            options=page_options,
             row=1
         )
-        model_select.callback = self.model_selected
+        model_select.callback = self._on_model_select
         self.add_item(model_select)
         
-        # Add pagination buttons if needed
+        # Pagination buttons
         if self.current_page > 0:
-            prev_btn = discord.ui.Button(label="Previous", style=discord.ButtonStyle.secondary, emoji=Emojis.ARROW_LEFT, row=2)
-            prev_btn.callback = self.prev_page
+            prev_btn = discord.ui.Button(label="Previous", style=discord.ButtonStyle.secondary, row=2)
+            prev_btn.callback = self._prev_page
             self.add_item(prev_btn)
-            
-        if end_idx < len(self.all_model_options):
-            next_btn = discord.ui.Button(label="Next", style=discord.ButtonStyle.secondary, emoji=Emojis.ARROW_RIGHT, row=2)
-            next_btn.callback = self.next_page
+        
+        if end < len(self.model_options):
+            next_btn = discord.ui.Button(label="Next", style=discord.ButtonStyle.secondary, row=2)
+            next_btn.callback = self._next_page
             self.add_item(next_btn)
-            
-        # Create beautiful provider embed
-        provider_info = {
-            "gemini": ("Google Gemini", "Advanced multimodal AI with vision capabilities", Colors.PRIMARY),
-            "groq": ("Groq", "Ultra-fast inference for instant responses", Colors.SUCCESS),
-            "openrouter": ("OpenRouter", "Access to 30+ free AI models", Colors.INFO)
-        }
         
-        name, desc, color = provider_info.get(self.selected_provider, ("Provider", "Selected", Colors.PRIMARY))
-        
+        # Build embed
+        provider_info = self.PROVIDERS[self.selected_provider]
         embed = discord.Embed(
-            title=f"{Emojis.SPARKLES} Model Configuration",
-            description=f"**Provider:** `{name}`\n{desc}\n\n**Page {self.current_page + 1}** of {(len(self.all_model_options) - 1) // items_per_page + 1}",
-            color=color
+            title="Model Selection",
+            description=f"**{provider_info['name']}**\n{provider_info['desc']}",
+            color=provider_info['color']
         )
-        embed.set_footer(text=f"Kamao AI • {len(self.all_model_options)} models available")
+        embed.set_footer(text=f"{len(self.model_options)} models available")
         
-        if interaction.response.is_done():
-            await interaction.message.edit(embed=embed, view=self)
-        else:
-            await interaction.response.edit_message(embed=embed, view=self)
-
-    async def next_page(self, interaction: discord.Interaction):
-        self.current_page += 1
-        await self.update_model_view(interaction)
-
-    async def prev_page(self, interaction: discord.Interaction):
-        self.current_page -= 1
-        await self.update_model_view(interaction)
+        await interaction.response.edit_message(embed=embed, view=self)
     
-    async def model_selected(self, interaction: discord.Interaction):
+    async def _prev_page(self, interaction: discord.Interaction):
+        self.current_page = max(0, self.current_page - 1)
+        await self._update_view(interaction)
+    
+    async def _next_page(self, interaction: discord.Interaction):
+        self.current_page += 1
+        await self._update_view(interaction)
+    
+    async def _on_model_select(self, interaction: discord.Interaction):
         """Handle model selection"""
         model_id = interaction.data['values'][0]
         
         try:
             session = await self.bot.get_user_session(self.user_id)
             session.switch_model(model_id, self.selected_provider)
+            
             info = self.models_config[self.selected_provider][model_id]
             
-            embed = create_status_embed(
-                "Model Switched",
-                f"**Active Model:** {info['emoji']} {info['name']}\n\n{info['desc']}",
-                Colors.SUCCESS,
-                Emojis.CHECK
+            embed = discord.Embed(
+                title="Model Changed",
+                description=f"**{info['name']}**\n\n{info['desc']}",
+                color=Colors.SUCCESS
             )
-            embed.add_field(name="Stats", value=f"⭐ {info['stars']}/5 | ⚡ {info['speed']}", inline=True)
+            embed.add_field(name="Provider", value=self.selected_provider.title(), inline=True)
+            embed.add_field(name="Speed", value=info['speed'], inline=True)
+            embed.add_field(name="Rating", value=f"{'★' * info['stars']}{'☆' * (5 - info['stars'])}", inline=True)
             
             await interaction.response.edit_message(embed=embed, view=None)
             
         except Exception as e:
-            logger.error(f"Model switch error: {e}")
+            logger.error(f"Model switch failed: {e}")
             await interaction.response.send_message(
-                embed=create_error_embed(f"Failed to switch model: {str(e)}"),
+                embed=create_error_embed(str(e)),
                 ephemeral=True
             )
+
+
+class ResetView(discord.ui.View):
+    """Reset options view"""
+    
+    def __init__(self, user_id: int, bot):
+        super().__init__(timeout=60)
+        self.user_id = user_id
+        self.bot = bot
+
+    @discord.ui.button(label="Keep Last 10", style=discord.ButtonStyle.primary)
+    async def soft_reset(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Soft reset - keep recent context"""
+        session = await self.bot.get_user_session(self.user_id)
+        session.reset_memory(keep_last=10)
+        
+        embed = create_success_embed(
+            "Memory Reset",
+            "Conversation cleared. Kept last 10 messages for context."
+        )
+        await interaction.response.edit_message(embed=embed, view=None)
+
+    @discord.ui.button(label="Full Wipe", style=discord.ButtonStyle.danger)
+    async def hard_reset(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Hard reset - clear everything"""
+        session = await self.bot.get_user_session(self.user_id)
+        session.reset_memory(keep_last=0)
+        
+        embed = create_success_embed(
+            "Memory Wiped",
+            "All conversation history has been deleted."
+        )
+        await interaction.response.edit_message(embed=embed, view=None)
+
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        embed = create_embed("Cancelled", "No changes made.", Colors.SECONDARY)
+        await interaction.response.edit_message(embed=embed, view=None)

@@ -1,4 +1,4 @@
-"""Discord Slash Commands including moderation"""
+"""Discord Slash Commands - Clean Modern Design"""
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -10,9 +10,9 @@ import io
 from .utils import download_file
 
 from .ui_components import (
-    ModelSelectorView, ConfirmView,
-    create_status_embed, create_error_embed,
-    Colors, Emojis
+    ModelSelectorView, ConfirmView, ResetView,
+    create_embed, create_error_embed, create_success_embed, create_info_embed,
+    Colors
 )
 from .image_gen import ImageGenerator
 from .search import SearchEngine
@@ -22,7 +22,7 @@ logger = logging.getLogger('Commands')
 def setup_commands(bot):
     """Setup all slash commands for the bot"""
     
-    @bot.tree.command(name="model", description="🤖 Change your AI model and provider")
+    @bot.tree.command(name="model", description="Change your AI model and provider")
     async def model_cmd(interaction: discord.Interaction):
         """Launch model selector"""
         channel_id = os.getenv('CHANNEL_ID')
@@ -37,23 +37,22 @@ def setup_commands(bot):
         current_info = bot.models_config[session.current_provider][session.current_model]
         
         embed = discord.Embed(
-            title=f"{Emojis.ROBOT} AI Model Configuration",
-            description=f"**Current Model:** {current_info['emoji']} {current_info['name']}\n*{current_info['desc']}*\n\n{Emojis.SPARKLES} Select a provider below to see available models",
+            title="AI Model Configuration",
+            description=f"**Current:** {current_info['name']}\n{current_info['desc']}\n\nSelect a provider below:",
             color=Colors.PRIMARY
         )
         embed.add_field(
-            name="📊 Current Stats",
-            value=f"⭐ {current_info['stars']}/5 | ⚡ {current_info['speed']} | 💻 {current_info['coding']}",
+            name="Stats",
+            value=f"{'★' * current_info['stars']}{'☆' * (5 - current_info['stars'])} | {current_info['speed']}",
             inline=False
         )
-        embed.set_footer(text="Kamao AI • Model Selector")
         
         view = ModelSelectorView(interaction.user.id, bot, bot.models_config)
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
-    @bot.tree.command(name="stats", description="📊 View your AI usage statistics")
+    @bot.tree.command(name="stats", description="View your AI usage statistics")
     async def stats_cmd(interaction: discord.Interaction):
-        """Show user stats with modern embed"""
+        """Show user stats"""
         channel_id = os.getenv('CHANNEL_ID')
         if not channel_id or str(interaction.channel_id) != channel_id:
             await interaction.response.send_message(
@@ -64,58 +63,29 @@ def setup_commands(bot):
         
         session = await bot.get_user_session(interaction.user.id)
         current_info = bot.models_config[session.current_provider][session.current_model]
+        msg_count = len(session.chat_db.get_messages(1000))
+        token_count = session.chat_db.get_token_count()
         
         embed = discord.Embed(
-            title=f"{Emojis.CHART} {interaction.user.name}'s AI Statistics",
-            color=Colors.INFO,
+            title=f"{interaction.user.name}'s Statistics",
+            color=Colors.PRIMARY,
             timestamp=datetime.utcnow()
         )
         
-        embed.add_field(
-            name=f"{Emojis.BRAIN} Current Model",
-            value=f"{current_info['emoji']} **{current_info['name']}**",
-            inline=False
-        )
-        embed.add_field(
-            name="🌐 Provider",
-            value=f"`{session.current_provider.upper()}`",
-            inline=True
-        )
-        embed.add_field(
-            name="💬 Messages",
-            value=f"**{len(session.chat_db.get_messages(1000))}**",
-            inline=True
-        )
-        embed.add_field(
-            name="🎯 Token Usage",
-            value=f"**{session.chat_db.get_token_count():,}**",
-            inline=True
-        )
-        embed.add_field(
-            name=f"{Emojis.STAR} Model Rating",
-            value=f"{'⭐' * current_info['stars']}",
-            inline=True
-        )
-        embed.add_field(
-            name="⚡ Speed",
-            value=f"`{current_info['speed']}`",
-            inline=True
-        )
-        embed.add_field(
-            name="💻 Coding",
-            value=f"`{current_info['coding']}`",
-            inline=True
-        )
+        embed.add_field(name="Model", value=current_info['name'], inline=True)
+        embed.add_field(name="Provider", value=session.current_provider.title(), inline=True)
+        embed.add_field(name="Messages", value=f"{msg_count:,}", inline=True)
+        embed.add_field(name="Tokens", value=f"{token_count:,}", inline=True)
+        embed.add_field(name="Speed", value=current_info['speed'], inline=True)
+        embed.add_field(name="Rating", value=f"{'★' * current_info['stars']}{'☆' * (5 - current_info['stars'])}", inline=True)
         
         embed.set_thumbnail(url=interaction.user.display_avatar.url)
-        embed.set_footer(text="Kamao AI • Per-user isolated memory")
         
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @bot.tree.command(name="reset", description="🗑️ Reset your conversation history (Admin only)")
-    @app_commands.describe(full_wipe="Completely wipe ALL memory (True) or keep last 10 messages (False)")
-    async def reset_cmd(interaction: discord.Interaction, full_wipe: bool = False):
-        """Reset conversation with confirmation"""
+    @bot.tree.command(name="reset", description="Reset your conversation history")
+    async def reset_cmd(interaction: discord.Interaction):
+        """Reset conversation with options"""
         channel_id = os.getenv('CHANNEL_ID')
         if not channel_id or str(interaction.channel_id) != channel_id:
             await interaction.response.send_message(
@@ -124,50 +94,15 @@ def setup_commands(bot):
             )
             return
         
-        # Admin check removed to allow users to reset their own memory
-        
-        wipe_text = "**COMPLETE WIPE** - All messages will be deleted!" if full_wipe else "Keep last 10 messages for context"
-        
         embed = discord.Embed(
-            title=f"{Emojis.TRASH} Reset Conversation",
-            description=f"This will clear your history.\n\n{wipe_text}\n\n**⚠️ This action cannot be undone!**",
-            color=Colors.ERROR if full_wipe else Colors.WARNING
+            title="Reset Memory",
+            description="Choose how to reset your conversation:\n\n"
+                       "**Keep Last 10** - Soft reset, preserves recent context\n"
+                       "**Full Wipe** - Complete deletion of all history",
+            color=Colors.WARNING
         )
-        embed.set_footer(text="Click 'Confirm' to proceed or 'Cancel' to abort")
         
-        view = ConfirmView(timeout=30)
-        
-        async def confirm_callback(interaction_inner: discord.Interaction):
-            try:
-                session = await bot.get_user_session(interaction_inner.user.id)
-                
-                if full_wipe:
-                    session.chat_db.clear_all()
-                    kept = 0
-                else:
-                    session.chat_db.reset_context(10)
-                    kept = 10
-                
-                # Force re-initialization
-                session.ai_provider = None
-                
-                success_embed = create_status_embed(
-                    "Reset Complete",
-                    f"✅ {'All messages cleared!' if full_wipe else f'Kept last {kept} messages for context.'}",
-                    Colors.SUCCESS,
-                    Emojis.CHECK
-                )
-                await interaction_inner.response.edit_message(embed=success_embed, view=None)
-                logger.info(f"User {interaction_inner.user.id} reset their memory")
-            except Exception as e:
-                logger.error(f"Reset error: {e}")
-                await interaction_inner.response.send_message(
-                    embed=create_error_embed(f"Failed to reset: {str(e)}"),
-                    ephemeral=True
-                )
-        
-        view.confirm.callback = confirm_callback
-        
+        view = ResetView(interaction.user.id, bot)
         await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
 
     @bot.tree.command(name="user_reset", description="🔨 Reset a specific user's memory (Admin only)")

@@ -14,9 +14,11 @@ import asyncio
 import sys
 from pathlib import Path
 
-# Local imports
 from src.bot import KamaoBot
 from src.commands import setup_commands
+
+# Ensure logs directory exists before configuring logging
+Path("logs").mkdir(exist_ok=True)
 
 # Configure logging
 logging.basicConfig(

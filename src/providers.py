@@ -170,14 +170,33 @@ class GeminiProvider(AIProvider):
             return "I apologize, but I couldn't generate a response. Please try again or rephrase your message."
             
         except Exception as e:
-            if "503" in str(e) or "429" in str(e):
-                logger.warning(f"Gemini API error {e}, retrying...")
-                await asyncio.sleep(2)
-                try:
-                    return await self.generate_response(parts)
-                except Exception as retry_e:
-                    logger.error(f"Gemini retry failed: {retry_e}")
-                    raise retry_e
+            error_str = str(e)
+            # Check for retryable errors (rate limit, server errors)
+            if "503" in error_str or "429" in error_str:
+                # Get retry count from a simple counter approach
+                if not hasattr(self, '_retry_count'):
+                    self._retry_count = 0
+                
+                self._retry_count += 1
+                
+                if self._retry_count <= 3:  # Max 3 retries
+                    wait_time = 2 ** self._retry_count  # Exponential backoff: 2, 4, 8 seconds
+                    logger.warning(f"Gemini API error {e}, retry {self._retry_count}/3 in {wait_time}s...")
+                    await asyncio.sleep(wait_time)
+                    try:
+                        result = await self.generate_response(parts)
+                        self._retry_count = 0  # Reset on success
+                        return result
+                    except Exception as retry_e:
+                        logger.error(f"Gemini retry {self._retry_count} failed: {retry_e}")
+                        if self._retry_count >= 3:
+                            self._retry_count = 0
+                            raise retry_e
+                        raise
+                else:
+                    self._retry_count = 0
+                    logger.error(f"Gemini max retries exceeded: {e}")
+                    raise
             
             logger.error(f"Gemini error: {e}")
             raise
@@ -192,7 +211,7 @@ class GroqProvider(AIProvider):
         self.messages = []
     
     def initialize(self, history: List[Dict[str, Any]]) -> None:
-        """Initialize Groq client with history"""
+        """Initialize Groq client with history - ensures user message comes first"""
         api_key = self.config.get('groq_api_key')
         if not api_key:
             raise ValueError("GROQ_API not set")
@@ -200,8 +219,17 @@ class GroqProvider(AIProvider):
         self.client = Groq(api_key=api_key)
         self.messages = [{"role": "system", "content": self.system_instruction}]
         
+        # Skip leading assistant messages (some providers require user first)
+        found_user = False
         for msg in history:
             role = "assistant" if msg["role"] == "model" else "user"
+            
+            if not found_user and role == "assistant":
+                continue
+            
+            if role == "user":
+                found_user = True
+            
             parts = [msg["content"]]
         
             if msg.get("attachments"):
@@ -255,11 +283,22 @@ class OpenRouterProvider(AIProvider):
         self.messages = []
     
     def initialize(self, history: List[Dict[str, Any]]) -> None:
-        """Initialize OpenRouter with history"""
+        """Initialize OpenRouter with history - ensures user message comes first"""
         self.messages = [{"role": "system", "content": self.system_instruction}]
         
+        # Some providers (Amazon Nova) require user message first
+        # Skip any leading assistant/model messages
+        found_user = False
         for msg in history:
             role = "assistant" if msg["role"] == "model" else "user"
+            
+            # Skip assistant messages until we find a user message
+            if not found_user and role == "assistant":
+                continue
+            
+            if role == "user":
+                found_user = True
+            
             parts = [msg["content"]]
             
             if msg.get("attachments"):

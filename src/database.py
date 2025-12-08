@@ -11,6 +11,10 @@ logger = logging.getLogger('Database')
 class ChatDatabase:
     """SQLite-based storage with compression for old messages"""
     
+    # Track message count for periodic VACUUM
+    _message_count = 0
+    _vacuum_interval = 100  # VACUUM every 100 messages
+    
     def __init__(self, db_path: str):
         self.db_path = db_path
         self._init_db()
@@ -78,8 +82,11 @@ class ChatDatabase:
                 WHERE key = 'token_count'
             """, (tokens,))
         
-        # Auto-cleanup old messages (keep last 100)
-        self._cleanup_old_messages()
+        # Increment message counter and cleanup periodically
+        ChatDatabase._message_count += 1
+        if ChatDatabase._message_count >= ChatDatabase._vacuum_interval:
+            self._cleanup_old_messages()
+            ChatDatabase._message_count = 0
     
     def _compress_content(self, content: str) -> str:
         """Compress content and store as base64"""
