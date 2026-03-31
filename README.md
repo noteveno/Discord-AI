@@ -1,4 +1,4 @@
-# Kamao AI Discord Bot
+# AI Discord Bot
 
 A powerful Discord AI bot with per-user memory persistence, multiple AI providers, and a modern UI.
 
@@ -15,7 +15,7 @@ A powerful Discord AI bot with per-user memory persistence, multiple AI provider
 ## 📁 Project Structure
 
 ```
-Kamao AI/
+Discord AI/
 ├── src/
 │   ├── __init__.py
 │   ├── bot.py              # Main bot class
